@@ -1,0 +1,888 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stash</title>
+<meta name="description" content="Stash: one place for the movies, series, games, anime and books you love. Interactive prototype with example data.">
+<meta name="theme-color" content="#08070C">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@700&family=Playfair+Display:ital,wght@1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Righteous&family=Unbounded:wght@500;700;800&display=swap">
+<style>
+/* Layout: phone-first app. Wide screens get a pitch column beside a framed device; phones get the app edge to edge.
+   Look: deliberately dark only, cinema-at-night glass with a coral → magenta → violet signature gradient. */
+:root{
+  --bg:#08070C;
+  --bg-raise:#121019;
+  --glass:rgba(255,255,255,.065);
+  --glass-2:rgba(255,255,255,.11);
+  --line:rgba(255,255,255,.10);
+  --line-2:rgba(255,255,255,.18);
+  --fg:#F5F2F7;
+  --fg-2:rgba(245,242,247,.64);
+  --fg-3:rgba(245,242,247,.42);
+  --ink:#121019;
+  --coral:#FF6B4A;
+  --pink:#EC4899;
+  --violet:#8B5CF6;
+  --grad:linear-gradient(100deg,#FF6B4A 0%,#EC4899 52%,#8B5CF6 100%);
+  --movie:#FF5A5F; --series:#4F8BFF; --game:#34D399; --anime:#F472B6; --book:#FBBF24;
+  --good:#7EE2A8; --ok:#FBD24E; --low:#FF7A6B;
+  --mood-bg:rgba(139,92,246,.18); --mood-line:rgba(139,92,246,.38); --mood-fg:#E9DDFF;
+  --f-display:'Unbounded','Plus Jakarta Sans',system-ui,sans-serif;
+  --f-body:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14px;line-height:1.4;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit}
+h1,h2,h3,p{margin:0}
+:focus-visible{outline:2px solid var(--coral);outline-offset:2px;border-radius:8px}
+[hidden]{display:none!important}
+
+/* ---------- Stage (desktop) ---------- */
+.stage{min-height:100%;display:flex;align-items:center;justify-content:center;gap:80px;padding-block:32px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  background:radial-gradient(55% 50% at 8% 0%,rgba(255,107,74,.16),transparent 70%),radial-gradient(50% 60% at 100% 100%,rgba(139,92,246,.18),transparent 70%),var(--bg)}
+.intro{max-width:390px;display:grid;gap:22px}
+.intro .kicker{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);font-weight:700}
+.intro h1{font-family:var(--f-display);font-weight:700;font-size:34px;line-height:1.08;letter-spacing:-.03em;text-wrap:balance}
+.intro h1 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.intro p{color:var(--fg-2);font-size:15.5px;line-height:1.55;max-width:60ch}
+.feat{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.feat li{display:flex;gap:12px;align-items:flex-start;font-size:14px;color:var(--fg-2)}
+.feat li b{color:var(--fg);font-weight:700;display:block}
+.feat .dot{flex:none;width:10px;height:10px;border-radius:50%;margin-top:5px;background:var(--c)}
+.note{font-size:12.5px;color:var(--fg-3);border-top:1px solid var(--line);padding-top:16px}
+
+/* ---------- Device ---------- */
+.device{flex:none;width:390px;height:844px;border-radius:58px;padding:10px;background:#1a1920;
+  box-shadow:0 0 0 1px #2e2c36,0 0 0 3px #0b0a0e,0 50px 120px rgba(0,0,0,.65)}
+.app{--st:54px;position:relative;height:100%;border-radius:48px;overflow:hidden;background:var(--bg);isolation:isolate}
+.app::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(85% 42% at 0% 0%,rgba(255,107,74,.32),transparent 70%),radial-gradient(70% 40% at 100% 42%,rgba(139,92,246,.22),transparent 70%),radial-gradient(60% 30% at 15% 100%,rgba(236,72,153,.15),transparent 70%)}
+.app::after{content:"";position:absolute;left:0;right:0;bottom:0;height:150px;z-index:15;pointer-events:none;background:linear-gradient(rgba(8,7,12,0),rgba(8,7,12,.9) 55%,var(--bg))}
+.island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:122px;height:35px;border-radius:20px;background:#000;z-index:80}
+.statusbar{position:absolute;inset:0 0 auto;height:54px;display:flex;align-items:center;justify-content:space-between;padding:4px 34px 0 42px;font-weight:700;font-size:15px;z-index:79;pointer-events:none}
+.statusbar svg{height:12px;width:auto}
+.screen{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding:calc(var(--st) + 4px) 0 140px;scrollbar-width:none;overscroll-behavior:contain}
+.screen::-webkit-scrollbar,.detail::-webkit-scrollbar,.rail::-webkit-scrollbar,.chips::-webkit-scrollbar,.hero-track::-webkit-scrollbar,.circle::-webkit-scrollbar{display:none}
+
+@media (max-width:860px){
+  .intro{display:none}
+  .stage{display:block;padding:0}
+  .device{width:100%;height:100vh;height:100dvh;border-radius:0;padding:0;background:none;box-shadow:none}
+  .app{--st:env(safe-area-inset-top,0px);border-radius:0}
+  .island,.statusbar{display:none}
+}
+
+/* ---------- Shared bits ---------- */
+.px{padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:8px;padding-bottom:14px}
+.wordmark{display:flex;align-items:center;gap:9px;font-family:var(--f-display);font-weight:800;font-size:23px;letter-spacing:-.05em}
+.wordmark span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.wordmark svg{width:26px;height:26px}
+.h1{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.035em}
+.row{display:flex;align-items:center;gap:10px}
+.icon-btn{position:relative;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:var(--glass);border:1px solid var(--line);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);flex:none}
+.icon-btn svg{width:20px;height:20px}
+.badge{position:absolute;top:9px;right:10px;width:8px;height:8px;border-radius:50%;background:var(--coral);box-shadow:0 0 0 2px var(--bg)}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.chip{flex:none;padding:8px 15px;border-radius:999px;background:var(--glass);border:1px solid var(--line);color:var(--fg-2);font-weight:600;font-size:13px;white-space:nowrap;transition:background .2s,color .2s}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--ink);border-color:transparent}
+.tag{display:inline-flex;align-items:center;gap:5px;padding:4px 8px 4px 7px;border-radius:7px;background:rgba(8,7,12,.6);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid var(--line);font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--fg);white-space:nowrap}
+.tag i{width:6px;height:6px;border-radius:50%;background:var(--c)}
+.moods{display:flex;gap:5px;flex-wrap:wrap}
+.mood{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;background:var(--mood-bg);border:1px solid var(--mood-line);font-size:11px;font-weight:600;color:var(--mood-fg);white-space:nowrap}
+.av{--s:28px;width:var(--s);height:var(--s);border-radius:50%;display:inline-grid;place-items:center;font-weight:800;font-size:calc(var(--s) * .42);color:#fff;flex:none}
+.stack{display:flex}
+.stack .av{margin-left:-7px;box-shadow:0 0 0 2px var(--bg-raise)}
+.stack .av:first-child{margin-left:0}
+.ring{position:relative;display:inline-grid;place-items:center;flex:none;border-radius:50%;background:rgba(8,7,12,.55)}
+.ring svg{position:absolute;inset:0;width:100%;height:100%}
+.ring b{position:relative;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.bar{flex:1;height:4px;border-radius:2px;background:var(--glass-2);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:inherit;background:var(--grad)}
+.sec{margin-top:30px}
+.sec-h{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;padding-bottom:12px}
+.sec-h h2{font-family:var(--f-display);font-weight:700;font-size:17px;letter-spacing:-.025em}
+.sec-h p{margin-top:3px;color:var(--fg-2);font-size:12.5px}
+.see{flex:none;color:var(--coral);font-weight:700;font-size:12.5px;display:flex;align-items:center;gap:1px;white-space:nowrap}
+.see svg{width:14px;height:14px}
+.empty{margin:0 20px;padding:28px 20px;border-radius:20px;border:1px dashed var(--line-2);text-align:center;color:var(--fg-2);display:grid;gap:10px;justify-items:center}
+.empty b{color:var(--fg);font-size:15px}
+.btn-soft{padding:9px 16px;border-radius:12px;background:var(--glass-2);font-weight:700;font-size:13px}
+
+/* ---------- Posters (generated art) ---------- */
+.poster{position:relative;aspect-ratio:2/3;width:100%;border-radius:16px;overflow:hidden;container-type:inline-size;background:#15131b;cursor:pointer}
+.poster svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.poster::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,0) 48%,rgba(0,0,0,.55));box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.poster .tag{position:absolute;top:7px;left:7px;z-index:2}
+.ptitle{position:absolute;left:8%;right:8%;bottom:7%;z-index:1;color:#fff;line-height:.95;text-shadow:0 2px 14px rgba(0,0,0,.45);text-wrap:balance;pointer-events:none}
+.t-bebas{font-family:'Bebas Neue',Impact,'Arial Narrow',sans-serif;font-size:19cqw;letter-spacing:.02em}
+.t-play{font-family:'Playfair Display',Georgia,serif;font-style:italic;font-weight:700;font-size:15cqw;line-height:1}
+.t-cinzel{font-family:'Cinzel',Georgia,serif;font-weight:700;font-size:11.5cqw;letter-spacing:.07em;text-align:center;line-height:1.1}
+.t-righteous{font-family:'Righteous','Arial Rounded MT Bold',system-ui,sans-serif;font-size:14cqw}
+.t-unb{font-family:var(--f-display);font-weight:800;font-size:10.5cqw;letter-spacing:-.02em;text-transform:uppercase;line-height:1.02}
+.pbadge{position:absolute;top:7px;right:7px;z-index:2;padding:3px 7px;border-radius:8px;background:var(--grad);font-size:10.5px;font-weight:800;font-variant-numeric:tabular-nums}
+.pprog{position:absolute;left:7px;right:7px;bottom:7px;z-index:2;height:4px;border-radius:2px;background:rgba(255,255,255,.22);overflow:hidden}
+.pprog i{display:block;height:100%;background:var(--grad)}
+
+/* ---------- Home ---------- */
+.hero{margin-top:18px}
+.hero-track{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 15%;scrollbar-width:none}
+.hero-card{flex:0 0 70%;scroll-snap-align:center;display:grid;gap:10px;transition:transform .35s,opacity .35s}
+.hero-card .poster{border-radius:22px;box-shadow:0 24px 50px rgba(0,0,0,.45)}
+.hero-card .ptitle{bottom:6%}
+.hero-pill{position:absolute;top:10px;left:10px;z-index:3;display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border-radius:999px;background:rgba(8,7,12,.62);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--line);font-size:10.5px;font-weight:600;line-height:1.2;max-width:calc(100% - 20px)}
+.hero-info{display:grid;gap:6px;padding:0 2px}
+.hero-info h3{font-size:16px;font-weight:800;letter-spacing:-.01em}
+.dots{display:flex;justify-content:center;gap:5px;margin-top:14px}
+.dots i{width:6px;height:6px;border-radius:3px;background:var(--line-2);transition:width .3s,background .3s}
+.dots i.on{width:18px;background:var(--grad)}
+.rail{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;scroll-padding-left:20px}
+.rcard{flex:0 0 116px;scroll-snap-align:start;min-width:0}
+.rcard h3,.gcard h3{font-size:13px;font-weight:700;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rcard p,.gcard p{color:var(--fg-2);font-size:11.5px;margin-top:2px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ccard{flex:0 0 284px;scroll-snap-align:start;display:flex;gap:13px;align-items:center;padding:10px 14px 10px 10px;border-radius:22px;background:var(--glass);border:1px solid var(--line);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);text-align:left}
+.ccard .poster{width:62px;flex:none;border-radius:12px}
+.ccard .ptitle{font-size:0}
+.cinfo{flex:1;min-width:0;display:grid;gap:5px;justify-items:start}
+.cinfo h3{font-size:15px;font-weight:700;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cinfo p{font-size:12px;color:var(--fg-2)}
+.prow{display:flex;align-items:center;gap:8px;width:100%;font-size:11px;color:var(--fg-2);font-variant-numeric:tabular-nums}
+.board{display:grid;gap:10px}
+.brow{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px 10px 10px;border-radius:20px;background:var(--glass);border:1px solid var(--line);text-align:left}
+.brow .rank{flex:none;width:16px;text-align:center;font-family:var(--f-display);font-weight:800;font-size:13px;color:var(--fg-3)}
+.brow .poster{width:50px;flex:none;border-radius:10px}
+.brow .ptitle{font-size:0}
+.bmain{flex:1;min-width:0;display:grid;gap:6px}
+.bmain h3{font-size:14.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--fg-2)}
+.rec .av{--s:20px}
+
+/* ---------- Tab bar ---------- */
+.tabbar{position:absolute;z-index:20;left:max(14px,env(safe-area-inset-left,0px));right:max(14px,env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));height:66px;border-radius:33px;display:flex;justify-content:space-around;align-items:center;padding:0 6px;background:rgba(22,20,29,.74);-webkit-backdrop-filter:blur(30px) saturate(1.4);backdrop-filter:blur(30px) saturate(1.4);border:1px solid var(--line);box-shadow:0 18px 40px rgba(0,0,0,.45)}
+.tab{display:grid;justify-items:center;gap:3px;width:62px;padding:7px 0 6px;border-radius:22px;font-size:10px;font-weight:600;color:var(--fg-3);transition:color .2s,background .2s}
+.tab svg{width:22px;height:22px}
+.tab[aria-current="page"]{color:var(--fg);background:var(--glass-2)}
+.tab[aria-current="page"] svg{color:var(--coral)}
+
+/* ---------- Discover ---------- */
+.search{display:flex;align-items:center;gap:10px;height:50px;padding:0 16px;margin:0 20px;border-radius:16px;background:var(--glass);border:1px solid var(--line);transition:border-color .2s}
+.search:focus-within{border-color:var(--coral)}
+.search svg{width:19px;height:19px;color:var(--fg-3);flex:none}
+.search input{flex:1;min-width:0;height:100%;background:none;border:0;outline:none;color:var(--fg);font:inherit;font-size:15px}
+.search input::placeholder{color:var(--fg-3)}
+.spin{display:flex;align-items:center;gap:14px;width:calc(100% - 40px);margin:16px 20px 0;padding:16px;border-radius:22px;text-align:left;background:linear-gradient(120deg,rgba(255,107,74,.24),rgba(236,72,153,.18) 50%,rgba(139,92,246,.24));border:1px solid var(--line-2)}
+.spin .ic{width:46px;height:46px;flex:none;border-radius:14px;display:grid;place-items:center;background:var(--grad)}
+.spin .ic svg{width:22px;height:22px}
+.spin b{display:block;font-size:15px}
+.spin span{color:var(--fg-2);font-size:12.5px}
+.types{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ttile{display:flex;flex-direction:column;justify-content:space-between;gap:12px;min-height:76px;padding:13px 14px;border-radius:18px;text-align:left;border:1px solid var(--line);background:linear-gradient(135deg,color-mix(in srgb,var(--c) 32%,transparent),rgba(255,255,255,.035) 70%)}
+.ttile:last-child{grid-column:1 / -1}
+.ttile b{font-family:var(--f-display);font-weight:700;font-size:15px;letter-spacing:-.02em}
+.ttile span{font-size:11.5px;color:var(--fg-2)}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 10px}
+.gcard{min-width:0}
+.gcard .poster{border-radius:13px}
+
+/* ---------- Library ---------- */
+.seg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:4px;border-radius:16px;background:var(--glass);border:1px solid var(--line)}
+.seg button{padding:9px 2px;border-radius:12px;font-size:12px;font-weight:700;color:var(--fg-2);display:grid;justify-items:center;gap:1px;transition:background .2s,color .2s}
+.seg button small{font-size:10.5px;font-weight:600;opacity:.7;font-variant-numeric:tabular-nums}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--ink)}
+.libsum{display:flex;gap:18px;color:var(--fg-2);font-size:12.5px;margin-top:4px}
+.libsum b{color:var(--fg);font-variant-numeric:tabular-nums}
+
+/* ---------- Friends ---------- */
+.circle{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none}
+.fr{flex:none;width:76px;display:grid;justify-items:center;gap:6px;text-align:center}
+.fr .ringwrap{padding:2.5px;border-radius:50%;background:var(--grad)}
+.fr .ringwrap .av{box-shadow:0 0 0 2.5px var(--bg)}
+.fr b{font-size:12.5px}
+.fr span{font-size:10.5px;color:var(--fg-2);font-variant-numeric:tabular-nums}
+.act{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;border-radius:20px;background:var(--glass);border:1px solid var(--line);text-align:left}
+.act .txt{flex:1;min-width:0}
+.act .txt p{font-size:13px;color:var(--fg-2)}
+.act .txt p b{color:var(--fg)}
+.act .txt small{display:block;margin-top:2px;font-size:11.5px;color:var(--fg-3)}
+.act .poster{width:36px;flex:none;border-radius:7px}
+.act .ptitle{font-size:0}
+
+/* ---------- Profile ---------- */
+.me{display:flex;align-items:center;gap:16px}
+.me .av{--s:72px;box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--coral)}
+.me h1{font-family:var(--f-display);font-weight:800;font-size:24px;letter-spacing:-.03em}
+.me p{color:var(--fg-2);font-size:13px;margin-top:2px}
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.stat{padding:12px 4px 10px;border-radius:16px;background:var(--glass);border:1px solid var(--line);display:grid;justify-items:center;gap:4px}
+.stat i{width:7px;height:7px;border-radius:50%;background:var(--c)}
+.stat b{font-family:var(--f-display);font-weight:700;font-size:19px;font-variant-numeric:tabular-nums}
+.stat span{font-size:10px;color:var(--fg-2)}
+.hours{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:10px;padding:14px 16px;border-radius:18px;background:linear-gradient(120deg,rgba(255,107,74,.18),rgba(139,92,246,.18));border:1px solid var(--line)}
+.hours b{font-family:var(--f-display);font-size:26px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.hours span{color:var(--fg-2);font-size:12.5px}
+.taste{display:grid;gap:11px}
+.trow{display:grid;grid-template-columns:96px minmax(0,1fr) 30px;align-items:center;gap:10px;font-size:12.5px}
+.trow .bar{height:8px;border-radius:4px}
+.trow span:last-child{text-align:right;color:var(--fg-2);font-variant-numeric:tabular-nums}
+.reset{margin:34px 20px 0;width:calc(100% - 40px);padding:13px;border-radius:14px;border:1px solid var(--line);color:var(--fg-2);font-weight:600;font-size:13px;text-align:center}
+.reset.arm{border-color:var(--low);color:var(--low)}
+
+/* ---------- Detail ---------- */
+.overlay{position:absolute;inset:0;background:var(--bg);overflow-y:auto;overflow-x:hidden;scrollbar-width:none;visibility:hidden;transition:transform .4s cubic-bezier(.2,.8,.2,1),visibility 0s linear .4s}
+.overlay.open{visibility:visible;transform:none!important;transition:transform .4s cubic-bezier(.2,.8,.2,1)}
+.detail{z-index:30;transform:translateX(100%)}
+.roul{z-index:28;transform:translateY(100%);display:flex;flex-direction:column;overflow:hidden}
+.sheet{z-index:40;transform:translateY(100%);display:flex;flex-direction:column;overflow:hidden}
+.d-hero{position:relative;height:440px;overflow:hidden}
+.d-hero .poster{position:absolute;inset:0;aspect-ratio:auto;height:100%;border-radius:0;cursor:default}
+.d-hero .poster::after{background:linear-gradient(180deg,rgba(8,7,12,.25) 0%,rgba(8,7,12,0) 30%,rgba(8,7,12,.4) 60%,var(--bg) 100%);box-shadow:none}
+.d-hero .ptitle{font-size:0}
+.d-top{position:absolute;z-index:3;top:calc(var(--st) + 6px);left:16px;right:16px;display:flex;justify-content:space-between}
+.d-top .icon-btn{background:rgba(8,7,12,.45)}
+.d-body{position:relative;z-index:2;margin-top:-150px;display:grid;gap:16px;padding-bottom:12px}
+.d-title{font-family:var(--f-display);font-weight:800;font-size:29px;line-height:1.05;letter-spacing:-.035em;text-wrap:balance}
+.d-meta{color:var(--fg-2);font-size:12.5px;margin-top:6px}
+.d-score{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:20px;background:var(--glass);border:1px solid var(--line);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+.d-score .mid{flex:1;min-width:0;display:grid;gap:4px;font-size:12.5px;color:var(--fg-2)}
+.d-score .mid b{color:var(--fg)}
+.d-score .comm{text-align:right;font-size:11px;color:var(--fg-2)}
+.d-score .comm b{display:block;font-family:var(--f-display);font-size:17px;color:var(--fg);font-variant-numeric:tabular-nums}
+.label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--fg-3);margin-bottom:8px}
+.pcard{display:grid;gap:10px;padding:14px;border-radius:18px;background:var(--glass);border:1px solid var(--line)}
+.pcard .top{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px}
+.pcard .top b{font-variant-numeric:tabular-nums}
+.yours{padding:14px;border-radius:18px;background:linear-gradient(120deg,rgba(255,107,74,.14),rgba(139,92,246,.14));border:1px solid var(--line);display:grid;gap:8px}
+.yours p{font-size:13.5px;line-height:1.5}
+.tabs{display:flex;border-bottom:1px solid var(--line)}
+.tabs button{flex:1;padding:12px 4px;text-align:center;color:var(--fg-3);font-weight:700;position:relative}
+.tabs button[aria-selected="true"]{color:var(--fg)}
+.tabs button[aria-selected="true"]::after{content:"";position:absolute;left:22%;right:22%;bottom:-1px;height:2px;border-radius:2px;background:var(--grad)}
+.desc{font-size:14px;line-height:1.6;color:var(--fg-2)}
+.where{display:flex;gap:8px;flex-wrap:wrap}
+.where span{padding:8px 13px;border-radius:12px;background:var(--glass-2);font-weight:700;font-size:12.5px}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.facts div{padding:11px 13px;border-radius:14px;background:var(--glass);border:1px solid var(--line)}
+.facts small{display:block;font-size:10.5px;color:var(--fg-3);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.facts b{font-size:13px}
+.rfilter{display:inline-flex;gap:4px;padding:3px;border-radius:999px;background:var(--glass);border:1px solid var(--line)}
+.rfilter button{padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;color:var(--fg-2)}
+.rfilter button[aria-pressed="true"]{background:var(--glass-2);color:var(--fg)}
+.review{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:14px 0;border-bottom:1px solid var(--line)}
+.review .av{grid-row:span 3;--s:34px}
+.review .who{display:flex;align-items:center;gap:8px;font-size:13px;flex-wrap:wrap}
+.review .who b{font-weight:700}
+.review .who small{color:var(--fg-3);font-size:11.5px}
+.fbadge{padding:2px 7px;border-radius:6px;font-size:10px;font-weight:800;background:rgba(236,72,153,.22);color:#FFC2DE}
+.review p{font-size:13px;line-height:1.5;color:var(--fg-2)}
+.review .foot{display:flex;align-items:center;gap:8px;margin-top:4px}
+.cta{position:sticky;bottom:0;z-index:5;padding:16px max(20px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));background:linear-gradient(rgba(8,7,12,0),var(--bg) 38%)}
+.btn-grad{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:54px;border-radius:18px;background:var(--grad);color:#fff;font-weight:800;font-size:16px;box-shadow:0 14px 34px rgba(236,72,153,.32)}
+.btn-grad:disabled{opacity:.45;box-shadow:none;cursor:not-allowed}
+
+/* ---------- Review sheet ---------- */
+.sheet-head{display:flex;align-items:center;gap:12px;padding-top:calc(var(--st) + 8px);padding-bottom:12px}
+.sheet-head h2{flex:1;text-align:center;font-family:var(--f-display);font-weight:700;font-size:17px;letter-spacing:-.02em}
+.sheet-head .sp{width:42px}
+.sheet-body{flex:1;overflow-y:auto;display:grid;align-content:start;gap:26px;padding-top:8px;padding-bottom:20px}
+.for{display:flex;align-items:center;gap:12px}
+.for .poster{width:52px;flex:none;border-radius:10px}
+.for .ptitle{font-size:0}
+.for b{display:block;font-size:15px}
+.for span{font-size:12px;color:var(--fg-2)}
+.q h3{font-size:15px;font-weight:700}
+.q p{font-size:12px;color:var(--fg-2);margin-top:3px}
+.slider{position:relative;padding-top:46px;margin-top:6px}
+.bubble{position:absolute;top:0;transform:translateX(-50%);display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--bg-raise);border:2px solid var(--coral);font-weight:800;font-size:14px;font-variant-numeric:tabular-nums;pointer-events:none}
+.scale{display:flex;justify-content:space-between;font-size:11px;color:var(--fg-3);margin-top:10px;font-variant-numeric:tabular-nums}
+.range{-webkit-appearance:none;appearance:none;display:block;width:100%;height:8px;border-radius:4px;outline:none;margin:0;
+  background:linear-gradient(90deg,#FF6B4A,#EC4899,#8B5CF6) 0 0 / var(--p,80%) 100% no-repeat,var(--glass-2)}
+.range::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:#fff;border:0;box-shadow:0 4px 14px rgba(0,0,0,.45),0 0 0 6px rgba(236,72,153,.28);cursor:grab}
+.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;background:#fff;border:0;box-shadow:0 4px 14px rgba(0,0,0,.45),0 0 0 6px rgba(236,72,153,.28);cursor:grab}
+.range:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 3px var(--coral)}
+.feel{display:flex;flex-wrap:wrap;gap:8px}
+.feel button{padding:8px 12px;border-radius:12px;background:var(--glass);border:1px solid var(--line);font-size:12.5px;font-weight:600;color:var(--fg-2);transition:background .2s,color .2s}
+.feel button[aria-pressed="true"]{background:var(--fg);color:var(--ink);border-color:transparent}
+.thoughts{width:100%;min-height:120px;resize:vertical;padding:14px;border-radius:16px;background:var(--glass);border:1px solid var(--line);color:var(--fg);font:inherit;font-size:14px;line-height:1.5;outline:none}
+.thoughts:focus{border-color:var(--coral)}
+.sheet .cta{position:static}
+
+/* ---------- Roulette ---------- */
+.roul .sheet-head{padding-bottom:6px}
+.roul .chips{padding-top:4px}
+.deck{position:relative;flex:1;min-height:0;margin:18px 30px 0}
+.rc{position:absolute;inset:0;margin:auto;max-height:100%;aspect-ratio:2/3;border-radius:26px;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;transition:transform .35s cubic-bezier(.2,.8,.2,1),opacity .35s;box-shadow:0 30px 60px rgba(0,0,0,.5)}
+.rc .poster{position:absolute;inset:0;aspect-ratio:auto;height:100%;border-radius:0;cursor:grab}
+.rc .poster::after{background:linear-gradient(180deg,rgba(0,0,0,0) 40%,rgba(0,0,0,.82))}
+.rc .ptitle{bottom:30%}
+.rc-info{position:absolute;left:16px;right:16px;bottom:16px;z-index:3;display:grid;gap:8px;pointer-events:none}
+.rc-info .row{justify-content:space-between}
+.rc-info p{font-size:12.5px;color:rgba(255,255,255,.78);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rc.n1{transform:translateY(16px) scale(.93);opacity:.7}
+.rc.n2{transform:translateY(32px) scale(.86);opacity:.4}
+.stamp{position:absolute;top:22px;z-index:4;padding:6px 12px;border-radius:10px;border:3px solid;font-family:var(--f-display);font-weight:800;font-size:18px;letter-spacing:.04em;opacity:0;pointer-events:none}
+.stamp.yes{left:18px;color:var(--good);transform:rotate(-12deg)}
+.stamp.no{right:18px;color:var(--low);transform:rotate(12deg)}
+.r-actions{display:flex;justify-content:center;align-items:center;gap:22px;padding:26px 0 calc(28px + env(safe-area-inset-bottom,0px))}
+.r-btn{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;background:var(--glass);border:1px solid var(--line)}
+.r-btn svg{width:26px;height:26px}
+.r-btn.skip{color:var(--low)}
+.r-btn.add{background:var(--grad);border:0;box-shadow:0 12px 30px rgba(236,72,153,.35)}
+.r-btn.info{width:50px;height:50px}
+.r-btn.info svg{width:22px;height:22px}
+.r-hint{text-align:center;font-size:12px;color:var(--fg-3);margin-top:-14px}
+
+/* ---------- Toast ---------- */
+.toast{position:absolute;left:50%;z-index:90;bottom:calc(98px + env(safe-area-inset-bottom,0px));transform:translate(-50%,12px);opacity:0;padding:11px 16px;border-radius:14px;background:var(--fg);color:var(--ink);font-weight:700;font-size:13px;white-space:nowrap;box-shadow:0 14px 34px rgba(0,0,0,.45);transition:opacity .25s,transform .25s;pointer-events:none}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <aside class="intro" aria-label="About this prototype">
+    <div class="kicker">Prototype · v0.1</div>
+    <h1>Every movie, series, game, anime and book you love. <em>One stash.</em></h1>
+    <p>Track what you're watching, playing and reading. Get picks based on what you rate highly, and see what your friends are into right now.</p>
+    <ul class="feat">
+      <li><span class="dot" style="--c:var(--coral)"></span><span><b>One library, five kinds of media</b>Want, in progress, done and dropped, with episode, hour and page progress.</span></li>
+      <li><span class="dot" style="--c:var(--pink)"></span><span><b>Picks from your own ratings</b>"Because you loved…" rails built from genres you rate 8 or higher.</span></li>
+      <li><span class="dot" style="--c:var(--violet)"></span><span><b>Friends, moods and reviews</b>Scores, feelings and a leaderboard of what your circle recommends.</span></li>
+      <li><span class="dot" style="--c:var(--book)"></span><span><b>Roulette for indecisive nights</b>Swipe right to save a pick, left to skip.</span></li>
+    </ul>
+    <p class="note">All titles and people are made-up example data. Anything you change is saved in this browser only.</p>
+  </aside>
+
+  <div class="device" id="device">
+    <div class="app" id="app">
+      <div class="island" aria-hidden="true"></div>
+      <div class="statusbar" aria-hidden="true">
+        <span>9:41</span>
+        <span class="row" style="gap:6px">
+          <svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1" fill="#fff"/><rect x="5" y="5.5" width="3" height="6.5" rx="1" fill="#fff"/><rect x="10" y="3" width="3" height="9" rx="1" fill="#fff"/><rect x="15" y="0" width="3" height="12" rx="1" fill="#fff"/></svg>
+          <svg viewBox="0 0 16 12"><path d="M8 11.5 10.2 9a3.2 3.2 0 0 0-4.4 0z" fill="#fff"/><path d="M3.6 6.8a6.3 6.3 0 0 1 8.8 0l-1.3 1.3a4.5 4.5 0 0 0-6.2 0z" fill="#fff"/><path d="M1.2 4.4a9.7 9.7 0 0 1 13.6 0l-1.3 1.3a7.9 7.9 0 0 0-11 0z" fill="#fff"/></svg>
+          <svg viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.5" stroke="#fff" stroke-opacity=".4" fill="none"/><rect x="2" y="2" width="20" height="9" rx="2" fill="#fff"/><path d="M25 4.5v4a2 2 0 0 0 0-4z" fill="#fff" fill-opacity=".4"/></svg>
+        </span>
+      </div>
+      <main id="screen" class="screen"></main>
+      <nav id="tabbar" class="tabbar" aria-label="Main"></nav>
+      <section id="roul" class="overlay roul" aria-label="Roulette" aria-hidden="true"></section>
+      <section id="detail" class="overlay detail" aria-label="Details" aria-hidden="true"></section>
+      <section id="sheet" class="overlay sheet" aria-label="Rate it" aria-hidden="true"></section>
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ================= Data (all example content) ================= */
+const TYPES = {
+  movie:{label:'Movie',plural:'Movies',c:'var(--movie)'},
+  series:{label:'Series',plural:'Series',c:'var(--series)'},
+  game:{label:'Game',plural:'Games',c:'var(--game)'},
+  anime:{label:'Anime',plural:'Anime',c:'var(--anime)'},
+  book:{label:'Book',plural:'Books',c:'var(--book)'}
+};
+const MOODS = {'Laughing':'😂','Inspired':'✨','Uplifted':'🌤️','Happy':'😊','Creeped out':'😱','Heartbroken':'💔','Nostalgic':'📼','Romantic':'💞','Mind-blown':'🤯','Tense':'😬','Melancholic':'🌧️','Cozy':'☕'};
+const FRIENDS = {
+  aino:{name:'Aino',g:['#F472B6','#8B5CF6'],match:92,now:'ember-saga'},
+  leo:{name:'Leo',g:['#4F8BFF','#22D3EE'],match:84,now:'kitsune-run'},
+  mira:{name:'Mira',g:['#FBBF24','#FF6B4A'],match:77,now:'paper-sea'},
+  eetu:{name:'Eetu',g:['#34D399','#0EA5E9'],match:69,now:'pixel-pilgrims'},
+  sofia:{name:'Sofia',g:['#FB7185','#F59E0B'],match:61,now:'velvet-static'}
+};
+const COMMUNITY = [['Jonas K.','#64748B','#334155'],['Priya S.','#78716C','#44403C'],['Elle M.','#6B7280','#374151'],['Tomás R.','#71717A','#3F3F46']];
+const TEXTS = [
+  'Stayed with me for days after I finished it.',
+  'Did not expect much and ended up loving it. The pacing is spot on.',
+  'Gorgeous to look at and surprisingly emotional.',
+  'A little slow in the middle, but the ending pays it all off.',
+  'I keep recommending this to everyone. Start it tonight.',
+  'Funny and sad in the same breath. Exactly my kind of thing.',
+  'The world-building is incredible. I want a sequel now.',
+  'Not perfect, but the best parts are really special.'
+];
+const ITEMS = [
+  {id:'neon-drift',title:'Neon Drift',type:'movie',year:2025,genres:['Sci-fi','Thriller'],meta:'2h 04m',len:{k:'min',t:124},pal:['#1a0b2e','#ff2e88','#ffb347'],motif:'grid',font:'bebas',score:8.6,recs:9,moods:['Mind-blown','Tense'],where:['Netflix','Apple TV'],desc:'A getaway driver in a flooded megacity takes one last job, carrying a passenger who remembers a future that has not happened yet.'},
+  {id:'velvet-static',title:'Velvet Static',type:'movie',year:2026,genres:['Music','Drama','Romance'],meta:'2h 11m',len:{k:'min',t:131},pal:['#2b0a1e','#e63973','#f7c59f'],motif:'sun',font:'play',score:8.8,recs:11,moods:['Romantic','Uplifted'],where:['In cinemas'],desc:'A late-night radio host and a session drummer fall for each other through songs played at 3 a.m.'},
+  {id:'glass-harbor',title:'Glass Harbor',type:'movie',year:2025,genres:['Drama','Mystery'],meta:'1h 52m',len:{k:'min',t:112},pal:['#0b1e2e','#3fa7d6','#e8d5b7'],motif:'moon',font:'play',score:8.1,recs:5,moods:['Melancholic','Inspired'],where:['Max','Prime Video'],desc:'When a glassblower’s daughter vanishes from a fogbound island town, her father reads the clues hidden in the windows she made.'},
+  {id:'last-lighthouse',title:'The Last Lighthouse',type:'movie',year:2024,genres:['Mystery','Thriller'],meta:'1h 47m',len:{k:'min',t:107},pal:['#0a1220','#f4a261','#2a9d8f'],motif:'arch',font:'cinzel',score:7.4,recs:3,moods:['Tense','Creeped out'],where:['Prime Video'],desc:'Two keepers, one storm, and a logbook that keeps writing itself.'},
+  {id:'red-meridian',title:'Red Meridian',type:'movie',year:2024,genres:['Western','Sci-fi'],meta:'2h 20m',len:{k:'min',t:140},pal:['#2a0800','#e2582c','#f9d67a'],motif:'mountains',font:'bebas',score:7.9,recs:4,moods:['Tense','Mind-blown'],where:['Disney+','Apple TV'],desc:'On a mining moon, a retired marshal is pulled into a land war over the only river for a thousand miles.'},
+  {id:'quiet-orbit',title:'The Quiet Orbit',type:'series',year:2024,genres:['Sci-fi','Drama'],meta:'2 seasons · 18 eps',len:{k:'ep',t:10,s:2},pal:['#060b26','#4f8bff','#c7d2fe'],motif:'rings',font:'unb',score:9.1,recs:12,moods:['Mind-blown','Melancholic'],where:['Apple TV+'],desc:'The six-person crew of a deep-space relay station start receiving messages sent by themselves, decades from now.'},
+  {id:'saltwater-kings',title:'Saltwater Kings',type:'series',year:2023,genres:['Crime','Drama'],meta:'3 seasons · 24 eps',len:{k:'ep',t:8,s:3},pal:['#04131a','#14b8a6','#fde68a'],motif:'stripes',font:'bebas',score:8.3,recs:7,moods:['Tense','Mind-blown'],where:['Netflix'],desc:'Three brothers run the last independent fishing fleet on a coast where the real catch is smuggled under the ice.'},
+  {id:'night-bakery',title:'Night Shift Bakery',type:'series',year:2025,genres:['Comedy'],meta:'1 season · 10 eps',len:{k:'ep',t:10,s:1},pal:['#1c1206','#f59e0b','#fef3c7'],motif:'blobs',font:'righteous',score:8.0,recs:8,moods:['Laughing','Cozy'],where:['Prime Video'],desc:'A burned-out chef takes over a 24-hour bakery and inherits its regulars: insomniacs, cab drivers and one very opinionated ghost.'},
+  {id:'hollow-pines',title:'Hollow Pines',type:'series',year:2025,genres:['Horror','Mystery'],meta:'1 season · 8 eps',len:{k:'ep',t:8,s:1},pal:['#050a07','#16a34a','#d9f99d'],motif:'mountains',font:'cinzel',score:7.6,recs:4,moods:['Creeped out','Tense'],where:['Max'],desc:'Every autumn, one house in Hollow Pines goes dark. This year it is the sheriff’s.'},
+  {id:'ember-saga',title:'Ember Saga',type:'game',year:2025,genres:['RPG','Fantasy'],meta:'~60h · PS5, PC',len:{k:'h',t:60},pal:['#1a0500','#ff6b4a','#ffd166'],motif:'sun',font:'cinzel',score:9.0,recs:10,moods:['Mind-blown','Inspired'],where:['PS5','PC'],desc:'Rebuild a kingdom from the ashes of a dragon war, one village and one hard choice at a time.'},
+  {id:'ironwood',title:'Ironwood',type:'game',year:2024,genres:['Survival','Adventure'],meta:'~35h · PC, Xbox',len:{k:'h',t:35},pal:['#06140c','#34d399','#a7f3d0'],motif:'mountains',font:'bebas',score:8.4,recs:6,moods:['Tense','Inspired'],where:['PC','Xbox'],desc:'Stranded in a forest that rearranges itself at night, you build, map and survive with whatever the trees allow.'},
+  {id:'pixel-pilgrims',title:'Pixel Pilgrims',type:'game',year:2026,genres:['Platformer','Adventure'],meta:'~12h · Switch, PC',len:{k:'h',t:12},pal:['#170b2e','#a78bfa','#fbcfe8'],motif:'blobs',font:'righteous',score:8.7,recs:7,moods:['Happy','Nostalgic'],where:['Switch','PC'],desc:'A hand-drawn platformer about two travelers crossing a world made of old game cartridges.'},
+  {id:'starfall-tactics',title:'Starfall Tactics',type:'game',year:2023,genres:['Strategy','Sci-fi'],meta:'~45h · PC',len:{k:'h',t:45},pal:['#020617','#38bdf8','#e0f2fe'],motif:'grid',font:'unb',score:7.8,recs:3,moods:['Mind-blown','Tense'],where:['PC'],desc:'Command a fleet of salvaged ships across a collapsing star cluster in tight, turn-based battles.'},
+  {id:'kitsune-run',title:'Kitsune Run',type:'anime',year:2024,genres:['Action','Fantasy'],meta:'24 eps',len:{k:'ep',t:24},pal:['#2a0614','#f472b6','#fed7aa'],motif:'moon',font:'righteous',score:8.7,recs:9,moods:['Mind-blown','Happy'],where:['Crunchyroll','Netflix'],desc:'A courier with a fox spirit stuck in her shadow races through neon Kyoto to deliver packages the gods want lost.'},
+  {id:'lantern-club',title:'Lantern Club',type:'anime',year:2025,genres:['Slice of life','Comedy'],meta:'12 eps',len:{k:'ep',t:12},pal:['#1b1030','#fb923c','#fde68a'],motif:'blobs',font:'play',score:8.2,recs:6,moods:['Cozy','Laughing'],where:['Crunchyroll'],desc:'Four high-schoolers restore a seaside lantern festival in a year when nobody else believes it will happen.'},
+  {id:'mecha-requiem',title:'Mecha Requiem',type:'anime',year:2023,genres:['Mecha','Drama','Sci-fi'],meta:'26 eps',len:{k:'ep',t:26},pal:['#0f0f14','#ef4444','#e5e7eb'],motif:'stripes',font:'bebas',score:8.5,recs:5,moods:['Heartbroken','Mind-blown'],where:['Netflix'],desc:'The last pilot of a decommissioned mech unit is asked to fight one final battle, against the machine she used to fly.'},
+  {id:'paper-sea',title:'The Paper Sea',type:'book',year:2024,genres:['Fantasy','Adventure'],meta:'412 pages',len:{k:'p',t:412},pal:['#071a2b','#fbbf24','#f5e6c8'],motif:'arch',font:'play',score:8.9,recs:8,moods:['Inspired','Nostalgic'],where:['Hardcover','Ebook','Audiobook'],desc:'A mapmaker’s apprentice sails an ocean drawn on paper, where every coastline changes when someone redraws it.'},
+  {id:'small-hours',title:'Small Hours',type:'book',year:2025,genres:['Literary','Drama'],meta:'264 pages',len:{k:'p',t:264},pal:['#14101c','#c084fc','#f5d0fe'],motif:'moon',font:'play',score:7.7,recs:3,moods:['Melancholic','Cozy'],where:['Paperback','Ebook'],desc:'One apartment building, one sleepless winter, and the neighbors who start leaving notes under each other’s doors.'},
+  {id:'atlas-quiet',title:'Atlas of Quiet Things',type:'book',year:2023,genres:['Non-fiction','Nature'],meta:'320 pages',len:{k:'p',t:320},pal:['#0c1a12','#86efac','#fef9c3'],motif:'rings',font:'cinzel',score:8.0,recs:4,moods:['Inspired','Cozy'],where:['Hardcover','Audiobook'],desc:'Fifty short essays on overlooked places: a moss garden, a closed train station, the inside of a lighthouse lamp.'},
+  {id:'cinder-salt',title:'Cinder & Salt',type:'book',year:2026,genres:['Fantasy','Romance'],meta:'488 pages',len:{k:'p',t:488},pal:['#220a0a','#f97316','#fecaca'],motif:'sun',font:'cinzel',score:8.4,recs:6,moods:['Romantic','Tense'],where:['Ebook','Audiobook'],desc:'A smuggler and a fire-priestess fake an engagement to cross a salt desert ruled by her family.'}
+];
+const BY = Object.fromEntries(ITEMS.map(i => [i.id, i]));
+const SEED = {
+  'quiet-orbit':{status:'progress',cur:5},
+  'ember-saga':{status:'progress',cur:27},
+  'paper-sea':{status:'progress',cur:124},
+  'neon-drift':{status:'done',rating:9,moods:['Mind-blown','Tense'],review:'The flooded-city chase is the best action scene I have seen in years.'},
+  'kitsune-run':{status:'done',rating:8.5,moods:['Happy']},
+  'velvet-static':{status:'done',rating:8,moods:['Romantic']},
+  'mecha-requiem':{status:'done',rating:9,moods:['Heartbroken']},
+  'saltwater-kings':{status:'done',rating:7},
+  'glass-harbor':{status:'want'},
+  'ironwood':{status:'want'},
+  'small-hours':{status:'want'},
+  'lantern-club':{status:'want'},
+  'hollow-pines':{status:'dropped'}
+};
+const ACTIVITY = [
+  ['aino','rated','ember-saga',9,'2h ago'],
+  ['leo','finished','kitsune-run',null,'5h ago'],
+  ['mira','added to Want','cinder-salt',null,'1d ago'],
+  ['eetu','started playing','pixel-pilgrims',null,'1d ago'],
+  ['sofia','rated','velvet-static',8.5,'2d ago']
+];
+const STATUSES = [['want','Want'],['progress','In progress'],['done','Done'],['dropped','Dropped']];
+const KEY = 'stash-demo-v1';
+
+/* ================= State ================= */
+function load(){ try{ const raw = localStorage.getItem(KEY); if(raw) return JSON.parse(raw); }catch(e){} return JSON.parse(JSON.stringify(SEED)); }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(lib)); }catch(e){} }
+let lib = load();
+const ui = {tab:'home', filter:'all', libStatus:'progress', libType:'all', query:'', detailId:null, dtab:'about', rf:'all', rtype:'all', deck:[], sheet:{rating:8, moods:[]}, resetArmed:false};
+
+/* ================= Helpers ================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => (Math.round(n * 10) / 10).toFixed(1);
+const ic = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const I = {
+  home: ic('<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'),
+  discover: ic('<circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/>'),
+  library: ic('<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>'),
+  friends: ic('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
+  profile: ic('<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>'),
+  bell: ic('<path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>'),
+  trophy: ic('<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>'),
+  search: ic('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>'),
+  back: ic('<path d="m15 18-6-6 6-6"/>'),
+  down: ic('<path d="m6 9 6 6 6-6"/>'),
+  chev: ic('<path d="m9 18 6-6-6-6"/>'),
+  share: ic('<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="15"/>'),
+  plus: ic('<path d="M5 12h14"/><path d="M12 5v14"/>'),
+  x: ic('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>'),
+  info: ic('<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>'),
+  shuffle: ic('<path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-7.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/>'),
+  star: ic('<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>')
+};
+const LOGO = `<svg viewBox="0 0 26 26" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF6B4A"/><stop offset=".55" stop-color="#EC4899"/><stop offset="1" stop-color="#8B5CF6"/></linearGradient></defs><rect x="2" y="13" width="22" height="9" rx="3.5" fill="url(#lg)"/><rect x="4.5" y="8" width="17" height="7" rx="3" fill="url(#lg)" opacity=".7"/><rect x="7" y="3.5" width="12" height="6" rx="2.5" fill="url(#lg)" opacity=".42"/></svg>`;
+
+function rng(seed){ let a = 2166136261; for(const ch of seed){ a ^= ch.charCodeAt(0); a = Math.imul(a, 16777619) >>> 0; }
+  return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+/* ---- Generated poster art (original, no real artwork) ---- */
+let uid = 0;
+function art(it){
+  const id = 'a' + (++uid), r = rng(it.id), [c1, c2, c3] = it.pal;
+  const gx = (.2 + r() * .6).toFixed(2), gy = (.15 + r() * .5).toFixed(2);
+  let defs = `<linearGradient id="${id}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="#050308"/></linearGradient>
+    <radialGradient id="${id}g" cx="${gx}" cy="${gy}" r=".75"><stop offset="0" stop-color="${c2}" stop-opacity=".6"/><stop offset="1" stop-color="${c2}" stop-opacity="0"/></radialGradient>
+    <linearGradient id="${id}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c3}"/><stop offset="1" stop-color="${c2}"/></linearGradient>
+    <filter id="${id}n"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>`;
+  let m = '';
+  const sunStripes = (cx, cy, rad, from) => { let s = ''; for(let k = 0; k < 6; k++){ const y = from + k * (rad / 6.5); s += `<rect x="${cx - rad - 2}" y="${y.toFixed(1)}" width="${rad * 2 + 4}" height="${(1.4 + k * 1.3).toFixed(1)}" fill="${c1}"/>`; } return s; };
+  switch(it.motif){
+    case 'sun':
+      m += `<circle cx="100" cy="150" r="66" fill="url(#${id}s)"/>` + sunStripes(100, 150, 66, 158);
+      m += `<rect y="204" width="200" height="96" fill="${c1}" opacity=".94"/>`;
+      for(let k = 0; k < 6; k++){ const w = 120 - k * 18; m += `<rect x="${100 - w / 2}" y="${212 + k * 11}" width="${w}" height="2.2" rx="1" fill="${c2}" opacity="${(.55 - k * .07).toFixed(2)}"/>`; }
+      break;
+    case 'grid':
+      m += `<circle cx="100" cy="176" r="50" fill="url(#${id}s)"/>` + sunStripes(100, 176, 50, 180);
+      m += `<rect y="190" width="200" height="110" fill="${c1}"/>`;
+      for(let i = -9; i <= 9; i++) m += `<line x1="100" y1="190" x2="${100 + i * 34}" y2="300" stroke="${c2}" stroke-width=".9" opacity=".75"/>`;
+      for(let k = 1; k <= 9; k++){ const y = 190 + k * k * 1.36; m += `<line x1="0" y1="${y.toFixed(1)}" x2="200" y2="${y.toFixed(1)}" stroke="${c2}" stroke-width=".9" opacity=".75"/>`; }
+      break;
+    case 'mountains':
+      m += `<circle cx="${(50 + r() * 100).toFixed(0)}" cy="${(60 + r() * 40).toFixed(0)}" r="20" fill="${c3}" opacity=".9"/>`;
+      [['' + c3, .3, 150], [c2, .75, 190], [c1, 1, 228]].forEach(([col, op, base], L) => {
+        let pts = '0,300 '; for(let x = 0; x <= 200; x += 20){ pts += `${x},${(base - r() * (70 - L * 14)).toFixed(1)} `; } pts += '200,300';
+        m += `<polygon points="${pts}" fill="${col}" opacity="${op}"/>`; });
+      break;
+    case 'moon':
+      for(let k = 0; k < 46; k++) m += `<circle cx="${(r() * 200).toFixed(1)}" cy="${(r() * 220).toFixed(1)}" r="${(.3 + r() * 1.1).toFixed(2)}" fill="#fff" opacity="${(.3 + r() * .7).toFixed(2)}"/>`;
+      m += `<circle cx="122" cy="96" r="80" fill="url(#${id}g)"/><circle cx="122" cy="96" r="46" fill="${c3}"/><circle cx="142" cy="82" r="42" fill="${c1}"/>`;
+      m += `<path d="M0 255 Q50 236 100 252 T200 246 V300 H0Z" fill="${c2}" opacity=".35"/>`;
+      break;
+    case 'rings': {
+      const cx = (100 + (r() - .5) * 50).toFixed(0), cy = (130 + (r() - .5) * 60).toFixed(0);
+      for(let k = 10; k >= 1; k--) m += `<circle cx="${cx}" cy="${cy}" r="${k * 15}" fill="none" stroke="${k % 2 ? c2 : c3}" stroke-width="${k % 3 ? 1.2 : 2.4}" opacity="${(1 - k * .085).toFixed(2)}"/>`;
+      m += `<circle cx="${cx}" cy="${cy}" r="9" fill="${c3}"/>`;
+      break; }
+    case 'blobs':
+      defs += `<filter id="${id}f" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="16"/></filter>`;
+      m += `<g filter="url(#${id}f)">`;
+      for(let k = 0; k < 5; k++) m += `<circle cx="${(r() * 200).toFixed(0)}" cy="${(30 + r() * 220).toFixed(0)}" r="${(30 + r() * 45).toFixed(0)}" fill="${k % 2 ? c3 : c2}" opacity="${(.55 + r() * .35).toFixed(2)}"/>`;
+      m += `</g>`;
+      for(let k = 0; k < 7; k++) m += `<circle cx="${(20 + r() * 160).toFixed(0)}" cy="${(30 + r() * 200).toFixed(0)}" r="${(2 + r() * 4).toFixed(1)}" fill="#fff" opacity=".7"/>`;
+      break;
+    case 'stripes':
+      m += `<g transform="rotate(-28 100 150)">`;
+      for(let k = -7; k < 14; k++) m += `<rect x="-120" y="${k * 26}" width="440" height="${k % 3 ? 7 : 15}" fill="${k % 2 ? c2 : c3}" opacity="${k % 2 ? .6 : .22}"/>`;
+      m += `</g><circle cx="100" cy="128" r="44" fill="${c1}"/><circle cx="100" cy="128" r="44" fill="none" stroke="${c3}" stroke-width="2"/>`;
+      break;
+    case 'arch':
+      m += `<rect x="56" y="58" width="88" height="196" rx="44" fill="url(#${id}s)" opacity=".95"/>`;
+      m += `<rect x="64" y="66" width="72" height="188" rx="36" fill="${c1}" opacity=".25"/>`;
+      m += `<ellipse cx="100" cy="258" rx="92" ry="12" fill="${c2}" opacity=".45"/>`;
+      m += `<ellipse cx="100" cy="214" rx="4.6" ry="5.2" fill="${c1}"/><rect x="95" y="219" width="10" height="33" rx="4" fill="${c1}"/>`;
+      break;
+  }
+  return `<svg viewBox="0 0 200 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs>${defs}</defs>
+    <rect width="200" height="300" fill="url(#${id}b)"/><rect width="200" height="300" fill="url(#${id}g)"/>${m}
+    <rect width="200" height="300" filter="url(#${id}n)" opacity=".1"/></svg>`;
+}
+function poster(it, o = {}){
+  const tag = o.tag ? `<span class="tag" style="--c:${TYPES[it.type].c}"><i></i>${TYPES[it.type].label}</span>` : '';
+  return `<div class="poster" ${o.open === false ? '' : `data-open="${it.id}" role="button" tabindex="0" aria-label="${esc(it.title)}"`}>${art(it)}${tag}<span class="ptitle t-${it.font}">${esc(it.title)}</span>${o.extra || ''}</div>`;
+}
+const tag = it => `<span class="tag" style="--c:${TYPES[it.type].c}"><i></i>${TYPES[it.type].label}</span>`;
+const mood = m => `<span class="mood">${MOODS[m] || ''} ${esc(m)}</span>`;
+function ring(score, size = 40){
+  const r = size / 2 - 2.5, c = 2 * Math.PI * r, col = score >= 8.5 ? 'var(--good)' : score >= 7 ? 'var(--ok)' : 'var(--low)';
+  return `<span class="ring" style="width:${size}px;height:${size}px"><svg viewBox="0 0 ${size} ${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="2.5"/><circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="${(c * score / 10).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 ${size / 2} ${size / 2})"/></svg><b style="font-size:${Math.round(size * .3)}px">${fmt(score)}</b></span>`;
+}
+function av(key, size = 28){
+  if(key === 'you') return `<span class="av" style="--s:${size}px;background:linear-gradient(135deg,#FF6B4A,#EC4899)">Y</span>`;
+  const f = FRIENDS[key]; return `<span class="av" style="--s:${size}px;background:linear-gradient(135deg,${f.g[0]},${f.g[1]})" title="${f.name}">${f.name[0]}</span>`;
+}
+function recFriends(it){ const r = rng(it.id + 'f'), keys = Object.keys(FRIENDS); const s = Math.floor(r() * keys.length); return [0, 1, 2].map(i => keys[(s + i) % keys.length]); }
+const recLine = it => `<span class="rec"><span class="stack">${recFriends(it).map(k => av(k, 20)).join('')}</span>${it.recs} friends recommend this</span>`;
+function progOf(id){ const it = BY[id], e = lib[id] || {}; const cur = e.cur || 0, t = it.len.t; return {cur, t, pct: Math.min(100, Math.round(cur / t * 100))}; }
+function progLabel(id){ const it = BY[id], {cur, t} = progOf(id), L = it.len;
+  if(L.k === 'ep') return L.s ? `S${L.s} · E${cur} of ${t}` : `Ep ${cur} of ${t}`;
+  if(L.k === 'min') return `${cur} of ${t} min`;
+  if(L.k === 'h') return `${cur}h of ~${t}h`;
+  return `Page ${cur} of ${t}`; }
+const STEP = {ep:1, min:15, h:1, p:20}, STEP_LABEL = {ep:'+1 episode', min:'+15 min', h:'+1 hour', p:'+20 pages'};
+const verb = t => ({movie:'watch', series:'watch', anime:'watch', game:'play', book:'read'}[t]);
+
+/* Recommendations: genre overlap with titles you rated 8+, plus friend signal. No AI. */
+function recommend(filter){
+  const liked = Object.entries(lib).filter(([, e]) => e.rating >= 8).map(([id, e]) => ({it: BY[id], w: e.rating - 6}));
+  const scored = ITEMS.filter(c => !lib[c.id] && (filter === 'all' || c.type === filter)).map(c => {
+    let s = 0, best = null, bs = 0;
+    for(const l of liked){ const ov = c.genres.filter(g => l.it.genres.includes(g)).length, v = ov * l.w; s += v; if(v > bs){ bs = v; best = l.it; } }
+    return {c, s: s + c.score * .4 + c.recs * .1, best};
+  }).sort((a, b) => b.s - a.s).slice(0, 8);
+  const count = {}; scored.forEach(x => { if(x.best) count[x.best.title] = (count[x.best.title] || 0) + 1; });
+  const because = Object.entries(count).sort((a, b) => b[1] - a[1])[0];
+  return {list: scored.map(x => x.c), because: because ? because[0] : null};
+}
+function reviewsFor(it){
+  const r = rng(it.id + 'rv'), keys = Object.keys(FRIENDS), out = [], s = Math.floor(r() * keys.length), t0 = Math.floor(r() * TEXTS.length);
+  const ago = ['2h ago', '6h ago', '1d ago', '3d ago', '1w ago'];
+  const nf = 2 + Math.floor(r() * 2);
+  for(let i = 0; i < nf; i++) out.push({who: keys[(s + i) % keys.length], friend: true, score: Math.max(5, Math.min(10, Math.round((it.score + (r() - .5) * 2) * 2) / 2)), mood: it.moods[i % 2], text: TEXTS[(t0 + i) % TEXTS.length], ago: ago[i + 1]});
+  for(let i = 0; i < 2; i++){ const c = COMMUNITY[(s + i) % COMMUNITY.length]; out.push({name: c[0], g: [c[1], c[2]], friend: false, score: Math.max(5, Math.min(10, Math.round((it.score + (r() - .5) * 2.4) * 2) / 2)), mood: it.moods[(i + 1) % 2], text: TEXTS[(t0 + nf + i) % TEXTS.length], ago: ago[i + 2]}); }
+  const e = lib[it.id];
+  if(e && e.rating != null) out.unshift({who: 'you', friend: true, you: true, score: e.rating, mood: (e.moods || [])[0], text: e.review || 'Rated without a written review.', ago: 'You'});
+  return out;
+}
+
+/* ================= Screens ================= */
+const chip = (label, attr, val, on) => `<button class="chip" ${attr}="${val}" aria-pressed="${on}">${label}</button>`;
+const typeChips = (attr, cur) => `<div class="chips px">${chip('All', attr, 'all', cur === 'all')}${Object.entries(TYPES).map(([k, t]) => chip(t.plural, attr, k, cur === k)).join('')}</div>`;
+const secHead = (title, sub, go) => `<div class="sec-h px"><div><h2>${title}</h2>${sub ? `<p>${sub}</p>` : ''}</div>${go ? `<button class="see" data-go="${go}">See all ${I.chev}</button>` : ''}</div>`;
+
+function Home(){
+  const f = ui.filter, pass = it => f === 'all' || it.type === f;
+  const hero = ITEMS.filter(pass).sort((a, b) => b.score * b.recs - a.score * a.recs).slice(0, 5);
+  const cont = Object.entries(lib).filter(([id, e]) => e.status === 'progress' && pass(BY[id])).map(([id]) => BY[id]);
+  const {list, because} = recommend(f);
+  const top = ITEMS.filter(pass).sort((a, b) => b.recs - a.recs || b.score - a.score).slice(0, 4);
+  return `
+  <header class="topbar px"><div class="wordmark">${LOGO}<span>stash</span></div>
+    <div class="row"><button class="icon-btn" data-go="friends" aria-label="Leaderboard">${I.trophy}</button><button class="icon-btn" data-a="toast" data-v="3 new reviews from friends" aria-label="Notifications">${I.bell}<i class="badge"></i></button></div></header>
+  ${typeChips('data-filter', f)}
+  <section class="hero" aria-label="Trending with friends">
+    <div class="hero-track" id="heroTrack">${hero.map(it => `
+      <article class="hero-card">
+        ${poster(it, {extra: `<span class="hero-pill">${ring(it.score, 34)}<span>${it.recs} friends<br>recommend this</span></span>`})}
+        <div class="hero-info"><h3>${esc(it.title)}</h3><div class="moods">${tag(it)}${it.moods.map(mood).join('')}</div></div>
+      </article>`).join('')}</div>
+    <div class="dots" id="dots">${hero.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>
+  </section>
+  ${cont.length ? `<section class="sec">${secHead('Continue', '', 'library')}<div class="rail px">${cont.map(it => { const p = progOf(it.id); return `
+    <button class="ccard" data-open="${it.id}">${poster(it, {open:false})}<span class="cinfo">${tag(it)}<h3>${esc(it.title)}</h3><p>${progLabel(it.id)}</p><span class="prow"><span class="bar"><i style="width:${p.pct}%"></i></span>${p.pct}%</span></span></button>`; }).join('')}</div></section>` : ''}
+  ${list.length ? `<section class="sec">${secHead('For you', because ? `Because you loved ${esc(because)}` : 'Based on what you rate highly', 'discover')}<div class="rail px">${list.map(it => `
+    <div class="rcard">${poster(it, {tag:true})}<h3>${esc(it.title)}</h3><p>★ ${fmt(it.score)} · ${it.year}</p></div>`).join('')}</div></section>` : ''}
+  <section class="sec">${secHead('Top from friends', 'Most recommended in your circle this week', 'friends')}<div class="board px">${top.map((it, i) => boardRow(it, i)).join('')}</div></section>`;
+}
+function boardRow(it, i){
+  return `<button class="brow" data-open="${it.id}"><span class="rank">${i + 1}</span>${poster(it, {open:false})}<span class="bmain"><h3>${esc(it.title)}</h3><span class="moods">${tag(it)}${mood(it.moods[0])}</span>${recLine(it)}</span>${ring(it.score, 42)}</button>`;
+}
+
+function Discover(){
+  return `<header class="topbar px"><h1 class="h1">Discover</h1></header>
+  <label class="search">${I.search}<input id="q" type="search" placeholder="Movies, series, games, anime, books" value="${esc(ui.query)}" autocomplete="off" aria-label="Search"></label>
+  <div id="browse" ${ui.query.trim() ? 'hidden' : ''}>
+    <button class="spin" data-a="roulette"><span class="ic">${I.shuffle}</span><span><b>Can't decide?</b><span>Spin the roulette and swipe through picks.</span></span></button>
+    <section class="sec">${secHead('Browse by type')}<div class="types px">${Object.entries(TYPES).map(([k, t]) => `<button class="ttile" style="--c:${t.c}" data-a="q" data-v="${t.label}"><b>${t.plural}</b><span>${ITEMS.filter(i => i.type === k).length} titles</span></button>`).join('')}</div></section>
+  </div>
+  <section class="sec" id="results">${results()}</section>`;
+}
+function results(){
+  const q = ui.query.trim().toLowerCase();
+  const res = ITEMS.filter(it => !q || it.title.toLowerCase().includes(q) || it.genres.some(g => g.toLowerCase().includes(q)) || TYPES[it.type].label.toLowerCase().startsWith(q) || TYPES[it.type].plural.toLowerCase().startsWith(q))
+    .sort((a, b) => q ? 0 : b.score - a.score);
+  if(!res.length) return `<div class="empty"><b>Nothing matches “${esc(ui.query)}”</b><span>Try a title, a genre like “fantasy”, or a type like “games”.</span></div>`;
+  return `${secHead(q ? `${res.length} result${res.length > 1 ? 's' : ''}` : 'Popular right now')}<div class="grid3 px">${res.map(gridCard).join('')}</div>`;
+}
+function gridCard(it){
+  const e = lib[it.id];
+  let extra = '';
+  if(e && e.rating != null) extra = `<span class="pbadge">★ ${fmt(e.rating)}</span>`;
+  else if(e && e.status === 'progress') extra = `<span class="pprog"><i style="width:${progOf(it.id).pct}%"></i></span>`;
+  return `<div class="gcard">${poster(it, {tag:true, extra})}<h3>${esc(it.title)}</h3><p>${e ? STATUSES.find(s => s[0] === e.status)[1] : `★ ${fmt(it.score)} · ${it.year}`}</p></div>`;
+}
+
+function Library(){
+  const all = Object.entries(lib);
+  const count = s => all.filter(([id, e]) => e.status === s && (ui.libType === 'all' || BY[id].type === ui.libType)).length;
+  const items = all.filter(([id, e]) => e.status === ui.libStatus && (ui.libType === 'all' || BY[id].type === ui.libType)).map(([id]) => BY[id]);
+  const done = all.filter(([, e]) => e.status === 'done').length;
+  const rated = all.filter(([, e]) => e.rating != null).map(([, e]) => e.rating);
+  const avg = rated.length ? rated.reduce((a, b) => a + b, 0) / rated.length : 0;
+  const label = STATUSES.find(s => s[0] === ui.libStatus)[1];
+  return `<header class="topbar px" style="display:block"><h1 class="h1">Library</h1>
+    <div class="libsum"><span><b>${all.length}</b> saved</span><span><b>${done}</b> finished</span><span><b>${avg ? fmt(avg) : '–'}</b> avg rating</span></div></header>
+  <div class="px"><div class="seg" role="group" aria-label="Status">${STATUSES.map(([k, l]) => `<button data-a="ls" data-v="${k}" aria-pressed="${ui.libStatus === k}">${l}<small>${count(k)}</small></button>`).join('')}</div></div>
+  <div style="margin-top:14px">${typeChips('data-lt', ui.libType)}</div>
+  <section class="sec" style="margin-top:20px">${items.length ? `<div class="grid3 px">${items.map(gridCard).join('')}</div>` :
+    `<div class="empty"><b>Nothing in ${label} yet</b><span>Open any title and set its status to ${label}.</span><button class="btn-soft" data-go="discover">Find something</button></div>`}</section>`;
+}
+
+function Friends(){
+  const board = [...ITEMS].sort((a, b) => b.recs - a.recs || b.score - a.score).slice(0, 6);
+  return `<header class="topbar px"><h1 class="h1">Friends</h1><button class="icon-btn" data-a="toast" data-v="Invites are not part of this demo" aria-label="Add friend">${I.plus}</button></header>
+  <section>${secHead('Your circle', 'Taste match is based on titles you both rated')}<div class="circle px">${Object.entries(FRIENDS).sort((a, b) => b[1].match - a[1].match).map(([k, f]) => `
+    <button class="fr" data-open="${f.now}" aria-label="${f.name}, ${f.match}% match, currently on ${esc(BY[f.now].title)}"><span class="ringwrap">${av(k, 58)}</span><b>${f.name}</b><span>${f.match}% match</span></button>`).join('')}</div></section>
+  <section class="sec">${secHead('Leaderboard', 'Top picks across your circle')}<div class="board px">${board.map((it, i) => boardRow(it, i)).join('')}</div></section>
+  <section class="sec">${secHead('Activity')}<div class="board px">${ACTIVITY.map(([k, v, id, sc, t]) => `
+    <button class="act" data-open="${id}">${av(k, 40)}<span class="txt"><p><b>${FRIENDS[k].name}</b> ${v} <b>${esc(BY[id].title)}</b>${sc ? ` · ★ ${fmt(sc)}` : ''}</p><small>${t}</small></span>${poster(BY[id], {open:false})}</button>`).join('')}</div></section>`;
+}
+
+function Profile(){
+  const all = Object.entries(lib);
+  const byType = Object.keys(TYPES).map(k => [k, all.filter(([id, e]) => e.status === 'done' && BY[id].type === k).length]);
+  const hrs = all.reduce((h, [id, e]) => { const it = BY[id], L = it.len; const n = e.status === 'done' ? L.t : e.status === 'progress' ? (e.cur || 0) : 0;
+    return h + (L.k === 'min' ? n / 60 : L.k === 'ep' ? n * (it.type === 'anime' ? .4 : .8) : L.k === 'h' ? n : n / 40); }, 0);
+  const g = {};
+  all.forEach(([id, e]) => { if(e.status === 'done' || e.status === 'progress') BY[id].genres.forEach(x => g[x] = (g[x] || 0) + (e.rating ? e.rating - 5 : 1)); });
+  const taste = Object.entries(g).sort((a, b) => b[1] - a[1]).slice(0, 5), mx = taste.length ? taste[0][1] : 1;
+  const moodCount = {}; all.forEach(([, e]) => (e.moods || []).forEach(m => moodCount[m] = (moodCount[m] || 0) + 1));
+  const favs = all.filter(([, e]) => e.rating >= 9).map(([id]) => BY[id]);
+  return `<header class="topbar px"><h1 class="h1">Profile</h1><button class="icon-btn" data-a="toast" data-v="Settings are not part of this demo" aria-label="Settings">${I.info}</button></header>
+  <div class="me px">${av('you', 72)}<div><h1>You</h1><p>${Object.keys(FRIENDS).length} friends · ${all.length} titles in your stash</p></div></div>
+  <section class="sec">${secHead('Finished', 'Across all five types')}<div class="px"><div class="stats">${byType.map(([k, n]) => `<div class="stat" style="--c:${TYPES[k].c}"><i></i><b>${n}</b><span>${TYPES[k].plural}</span></div>`).join('')}</div>
+    <div class="hours"><span>Time logged, estimated</span><b>${Math.round(hrs)} h</b></div></div></section>
+  <section class="sec">${secHead('Your taste', 'Genres weighted by how you rate them')}<div class="taste px">${taste.map(([name, v]) => `<div class="trow"><span>${esc(name)}</span><span class="bar"><i style="width:${Math.max(8, v / mx * 100)}%"></i></span><span>${Math.round(v / mx * 100)}</span></div>`).join('')}</div></section>
+  ${Object.keys(moodCount).length ? `<section class="sec">${secHead('How things made you feel')}<div class="moods px">${Object.entries(moodCount).sort((a, b) => b[1] - a[1]).map(([m, n]) => `<span class="mood">${MOODS[m]} ${esc(m)} · ${n}</span>`).join('')}</div></section>` : ''}
+  ${favs.length ? `<section class="sec">${secHead('Favorites', 'Everything you rated 9 or higher')}<div class="rail px">${favs.map(it => `<div class="rcard">${poster(it, {tag:true, extra:`<span class="pbadge">★ ${fmt(lib[it.id].rating)}</span>`})}<h3>${esc(it.title)}</h3><p>${TYPES[it.type].label} · ${it.year}</p></div>`).join('')}</div></section>` : ''}
+  <button class="reset ${ui.resetArmed ? 'arm' : ''}" data-a="reset">${ui.resetArmed ? 'Tap again to restore the example data' : 'Reset demo data'}</button>`;
+}
+
+const SCREENS = {home:Home, discover:Discover, library:Library, friends:Friends, profile:Profile};
+const TABS = [['home', 'Home'], ['discover', 'Discover'], ['library', 'Library'], ['friends', 'Friends'], ['profile', 'Profile']];
+
+/* ================= Overlays ================= */
+function Detail(id){
+  const it = BY[id], e = lib[id], st = e ? e.status : null, revs = reviewsFor(it);
+  const shown = ui.rf === 'friends' ? revs.filter(r => r.friend) : revs;
+  const whereLabel = {movie:'Where to watch', series:'Where to watch', anime:'Where to watch', game:'Where to play', book:'Where to read'}[it.type];
+  const p = progOf(id);
+  return `
+  <div class="d-hero">${poster(it, {open:false})}
+    <div class="d-top"><button class="icon-btn" data-a="back" aria-label="Back">${I.back}</button><button class="icon-btn" data-a="share" aria-label="Share">${I.share}</button></div></div>
+  <div class="d-body px">
+    <div><h1 class="d-title">${esc(it.title)}</h1><p class="d-meta">${it.year} · ${it.genres.join(', ')} · ${it.meta}</p></div>
+    <div class="moods">${tag(it)}${it.moods.map(mood).join('')}</div>
+    <div class="d-score">${ring(it.score, 50)}<span class="mid"><b>Friends' score</b>${recLine(it)}</span><span class="comm">Community<b>${fmt(it.score - .3)}</b>/ 10</span></div>
+    <div><div class="label">Status</div><div class="seg" role="group" aria-label="Status">${STATUSES.map(([k, l]) => `<button data-a="status" data-v="${k}" aria-pressed="${st === k}">${l}</button>`).join('')}</div></div>
+    ${st === 'progress' ? `<div class="pcard"><div class="top"><b>${progLabel(id)}</b><span>${p.pct}%</span></div><div class="bar"><i style="width:${p.pct}%"></i></div><button class="btn-soft" data-a="step">${STEP_LABEL[it.len.k]}</button></div>` : ''}
+    ${e && e.rating != null ? `<div class="yours"><div class="row" style="justify-content:space-between"><b>Your rating</b>${ring(e.rating, 40)}</div>${(e.moods || []).length ? `<div class="moods">${e.moods.map(mood).join('')}</div>` : ''}${e.review ? `<p>${esc(e.review)}</p>` : ''}</div>` : ''}
+    <div class="tabs" role="tablist"><button role="tab" data-a="dtab" data-v="about" aria-selected="${ui.dtab === 'about'}">About</button><button role="tab" data-a="dtab" data-v="reviews" aria-selected="${ui.dtab === 'reviews'}">Reviews · ${revs.length}</button></div>
+    ${ui.dtab === 'about' ? `
+      <p class="desc">${esc(it.desc)}</p>
+      <div><div class="label">${whereLabel}</div><div class="where">${it.where.map(w => `<span>${esc(w)}</span>`).join('')}</div></div>
+      <div class="facts"><div><small>Type</small><b>${TYPES[it.type].label}</b></div><div><small>Released</small><b>${it.year}</b></div><div><small>Length</small><b>${it.meta.split(' · ')[0]}</b></div><div><small>Friends recommend</small><b>${it.recs} of ${Object.keys(FRIENDS).length + 7}</b></div></div>` : `
+      <div class="rfilter" role="group"><button data-a="rf" data-v="all" aria-pressed="${ui.rf === 'all'}">All</button><button data-a="rf" data-v="friends" aria-pressed="${ui.rf === 'friends'}">Friends</button></div>
+      <div>${shown.map(r => `<div class="review">${r.who ? av(r.who, 34) : `<span class="av" style="--s:34px;background:linear-gradient(135deg,${r.g[0]},${r.g[1]})">${r.name[0]}</span>`}
+        <div class="who"><b>${r.you ? 'You' : r.who ? FRIENDS[r.who].name : esc(r.name)}</b>${r.friend && !r.you ? '<span class="fbadge">Friend</span>' : ''}<small>${r.you ? '' : r.ago}</small></div>
+        <p>${esc(r.text)}</p><div class="foot">${ring(r.score, 28)}${r.mood ? mood(r.mood) : ''}</div></div>`).join('')}</div>`}
+  </div>
+  <div class="cta"><button class="btn-grad" data-a="rate">${e && e.rating != null ? 'Edit your review' : 'Rate it'} ${I.star.replace('<svg', '<svg style="width:18px;height:18px"')}</button></div>`;
+}
+function Sheet(id){
+  const it = BY[id], s = ui.sheet, pct = s.rating * 10;
+  return `<div class="sheet-head px"><button class="icon-btn" data-a="sheet-close" aria-label="Close">${I.down}</button><h2>Add a review</h2><span class="sp"></span></div>
+  <div class="sheet-body px">
+    <div class="for">${poster(it, {open:false})}<div><b>${esc(it.title)}</b><span>${TYPES[it.type].label} · ${it.year}</span></div></div>
+    <div class="q"><h3>Rate it</h3><p>Drag to set your score from 0 to 10.</p>
+      <div class="slider"><span class="bubble" id="bubble" style="left:calc(${pct}% + ${14 - pct * .28}px)">${fmt(s.rating)}</span>
+        <input class="range" id="rating" type="range" min="0" max="10" step="0.5" value="${s.rating}" style="--p:${pct}%" aria-label="Rating">
+        <div class="scale"><span>0</span><span>5</span><span>10</span></div></div></div>
+    <div class="q"><h3>How did it make you feel?</h3><p>Pick up to two.</p>
+      <div class="feel" style="margin-top:12px">${Object.entries(MOODS).map(([m, em]) => `<button data-a="mood" data-v="${m}" aria-pressed="${s.moods.includes(m)}">${em} ${m}</button>`).join('')}</div></div>
+    <div class="q"><h3>What were your thoughts?</h3><textarea class="thoughts" id="thoughts" placeholder="Optional. What stood out?" style="margin-top:12px">${esc(s.text || '')}</textarea></div>
+  </div>
+  <div class="cta"><button class="btn-grad" data-a="post">Post review</button></div>`;
+}
+function Roulette(){
+  const top = ui.deck.slice(0, 3);
+  return `<div class="sheet-head px"><button class="icon-btn" data-a="roul-close" aria-label="Close">${I.down}</button><h2>Roulette</h2><button class="icon-btn" data-a="reshuffle" aria-label="Shuffle">${I.shuffle}</button></div>
+  ${typeChips('data-rt', ui.rtype)}
+  <div class="deck" id="deck">${top.length ? top.map((id, i) => { const it = BY[id]; return `
+    <div class="rc ${i ? 'n' + i : 'top'}" data-id="${id}" style="z-index:${3 - i}">${poster(it, {open:false})}
+      <span class="stamp yes">SAVE</span><span class="stamp no">SKIP</span>
+      <div class="rc-info"><div class="row">${tag(it)}${ring(it.score, 40)}</div><div class="moods">${it.moods.map(mood).join('')}</div><p>${esc(it.desc)}</p></div></div>`; }).reverse().join('') :
+    `<div class="empty" style="margin:40px 0 0"><b>You've seen every pick</b><span>Change the type above or shuffle again.</span><button class="btn-soft" data-a="reshuffle">Shuffle again</button></div>`}</div>
+  ${top.length ? `<div class="r-actions"><button class="r-btn skip" data-a="r-skip" aria-label="Skip">${I.x}</button><button class="r-btn info" data-a="r-info" aria-label="Details">${I.info}</button><button class="r-btn add" data-a="r-add" aria-label="Save to Want">${I.plus}</button></div><p class="r-hint">Swipe right to save to Want, left to skip</p>` : ''}`;
+}
+
+/* ================= Rendering ================= */
+const screen = $('#screen'), tabbar = $('#tabbar'), detail = $('#detail'), sheet = $('#sheet'), roul = $('#roul'), toastEl = $('#toast');
+function render(keepScroll){
+  const y = screen.scrollTop;
+  screen.innerHTML = SCREENS[ui.tab]();
+  screen.scrollTop = keepScroll ? y : 0;
+  tabbar.innerHTML = TABS.map(([k, l]) => `<button class="tab" data-go="${k}" ${ui.tab === k ? 'aria-current="page"' : ''}>${I[k]}<span>${l}</span></button>`).join('');
+  const track = $('#heroTrack');
+  if(track) track.addEventListener('scroll', () => {
+    const cards = [...track.children], mid = track.scrollLeft + track.clientWidth / 2;
+    let best = 0, bd = 1e9; cards.forEach((c, i) => { const d = Math.abs(c.offsetLeft + c.offsetWidth / 2 - mid); if(d < bd){ bd = d; best = i; } });
+    document.querySelectorAll('#dots i').forEach((d, i) => d.classList.toggle('on', i === best));
+  }, {passive:true});
+  const q = $('#q');
+  if(q) q.addEventListener('input', () => { ui.query = q.value; $('#results').innerHTML = results(); $('#browse').hidden = !!ui.query.trim(); });
+}
+function openLayer(el){ el.classList.add('open'); el.setAttribute('aria-hidden', 'false'); }
+function closeLayer(el){ el.classList.remove('open'); el.setAttribute('aria-hidden', 'true'); }
+function openDetail(id){ if(!BY[id]) return; if(ui.detailId !== id){ ui.dtab = 'about'; ui.rf = 'all'; } ui.detailId = id; detail.innerHTML = Detail(id); detail.scrollTop = 0; openLayer(detail); }
+function refreshDetail(){ if(ui.detailId){ const y = detail.scrollTop; detail.innerHTML = Detail(ui.detailId); detail.scrollTop = y; } }
+function closeDetail(){ closeLayer(detail); ui.detailId = null; }
+function openSheet(){
+  const e = lib[ui.detailId] || {};
+  ui.sheet = {rating: e.rating != null ? e.rating : 8, moods: [...(e.moods || [])], text: e.review || ''};
+  sheet.innerHTML = Sheet(ui.detailId); openLayer(sheet);
+  const r = $('#rating'), b = $('#bubble');
+  r.addEventListener('input', () => { const v = +r.value, pct = v * 10; ui.sheet.rating = v; r.style.setProperty('--p', pct + '%'); b.textContent = fmt(v); b.style.left = `calc(${pct}% + ${14 - pct * .28}px)`; });
+  $('#thoughts').addEventListener('input', ev => { ui.sheet.text = ev.target.value; });
+}
+let toastT;
+function toast(msg){ toastEl.textContent = msg; toastEl.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove('show'), 2200); }
+function buildDeck(){ ui.deck = ITEMS.filter(it => !lib[it.id] && (ui.rtype === 'all' || it.type === ui.rtype)).map(it => it.id).sort(() => Math.random() - .5); }
+function renderRoulette(){ roul.innerHTML = Roulette(); bindDrag(); }
+function decide(dir){
+  const card = roul.querySelector('.rc.top'); if(!card) return;
+  const id = card.dataset.id;
+  card.style.transition = 'transform .32s ease-in, opacity .32s';
+  card.style.transform = `translateX(${dir > 0 ? 140 : -140}%) rotate(${dir > 0 ? 18 : -18}deg)`; card.style.opacity = '0';
+  if(dir > 0){ lib[id] = {status:'want'}; save(); toast(`Saved ${BY[id].title} to Want`); }
+  setTimeout(() => { ui.deck = ui.deck.filter(x => x !== id); renderRoulette(); render(true); }, 280);
+}
+function bindDrag(){
+  const card = roul.querySelector('.rc.top'); if(!card) return;
+  let x0 = 0, dx = 0, drag = false;
+  const yes = card.querySelector('.stamp.yes'), no = card.querySelector('.stamp.no');
+  card.addEventListener('pointerdown', ev => { drag = true; x0 = ev.clientX; dx = 0; card.setPointerCapture(ev.pointerId); card.style.transition = 'none'; });
+  card.addEventListener('pointermove', ev => { if(!drag) return; dx = ev.clientX - x0; card.style.transform = `translateX(${dx}px) rotate(${dx / 18}deg)`; yes.style.opacity = Math.max(0, Math.min(1, dx / 90)); no.style.opacity = Math.max(0, Math.min(1, -dx / 90)); });
+  const end = () => { if(!drag) return; drag = false; if(Math.abs(dx) > 90) decide(dx > 0 ? 1 : -1); else { card.style.transition = ''; card.style.transform = ''; yes.style.opacity = 0; no.style.opacity = 0; } };
+  card.addEventListener('pointerup', end); card.addEventListener('pointercancel', end);
+}
+function setTab(t){ closeDetail(); closeLayer(sheet); closeLayer(roul); ui.tab = t; ui.resetArmed = false; render(); }
+
+/* ================= Events ================= */
+const app = $('#app');
+app.addEventListener('click', ev => {
+  const el = ev.target.closest('[data-open],[data-go],[data-filter],[data-lt],[data-rt],[data-a]'); if(!el) return;
+  if(el.dataset.open){ openDetail(el.dataset.open); return; }
+  if(el.dataset.go){ setTab(el.dataset.go); return; }
+  if(el.dataset.filter){ ui.filter = el.dataset.filter; render(true); return; }
+  if(el.dataset.lt){ ui.libType = el.dataset.lt; render(true); return; }
+  if(el.dataset.rt){ ui.rtype = el.dataset.rt; buildDeck(); renderRoulette(); return; }
+  const a = el.dataset.a, v = el.dataset.v, id = ui.detailId;
+  switch(a){
+    case 'toast': toast(v); break;
+    case 'back': closeDetail(); break;
+    case 'share': {
+      const url = location.href.split('#')[0] + '#' + id;
+      const ok = () => toast('Link copied'), fail = () => toast('Copy not available here');
+      try{ navigator.clipboard.writeText(url).then(ok, fail); }catch(e){ fail(); }
+      break; }
+    case 'status': {
+      const e = lib[id] || {};
+      if(e.status === v){ delete lib[id]; toast('Removed from your stash'); }
+      else { lib[id] = {...e, status: v}; if(v === 'progress' && !lib[id].cur) lib[id].cur = 0; toast(`Moved to ${STATUSES.find(s => s[0] === v)[1]}`); }
+      save(); refreshDetail(); render(true); break; }
+    case 'step': {
+      const it = BY[id], e = lib[id]; e.cur = Math.min(it.len.t, (e.cur || 0) + STEP[it.len.k]);
+      if(e.cur >= it.len.t){ e.status = 'done'; toast(`Finished ${it.title}. Rate it?`); } else toast(progLabel(id));
+      save(); refreshDetail(); render(true); break; }
+    case 'dtab': ui.dtab = v; refreshDetail(); break;
+    case 'rf': ui.rf = v; refreshDetail(); break;
+    case 'rate': openSheet(); break;
+    case 'sheet-close': closeLayer(sheet); break;
+    case 'mood': {
+      const m = ui.sheet.moods, i = m.indexOf(v);
+      if(i >= 0) m.splice(i, 1); else { m.push(v); if(m.length > 2) m.shift(); }
+      sheet.querySelectorAll('.feel button').forEach(b => b.setAttribute('aria-pressed', m.includes(b.dataset.v)));
+      break; }
+    case 'post': {
+      const s = ui.sheet, e = lib[id] || {};
+      lib[id] = {...e, status:'done', rating: s.rating, moods: [...s.moods], review: (s.text || '').trim()};
+      if(BY[id].len) lib[id].cur = BY[id].len.t;
+      save(); closeLayer(sheet); ui.dtab = 'reviews'; ui.rf = 'all'; refreshDetail(); render(true); toast('Review posted'); break; }
+    case 'q': ui.query = v; render(); break;
+    case 'ls': ui.libStatus = v; render(true); break;
+    case 'roulette': buildDeck(); renderRoulette(); openLayer(roul); break;
+    case 'roul-close': closeLayer(roul); break;
+    case 'reshuffle': buildDeck(); renderRoulette(); break;
+    case 'r-skip': decide(-1); break;
+    case 'r-add': decide(1); break;
+    case 'r-info': { const c = roul.querySelector('.rc.top'); if(c) openDetail(c.dataset.id); break; }
+    case 'reset':
+      if(!ui.resetArmed){ ui.resetArmed = true; render(true); }
+      else { lib = JSON.parse(JSON.stringify(SEED)); save(); ui.resetArmed = false; render(true); toast('Example data restored'); }
+      break;
+  }
+});
+app.addEventListener('keydown', ev => {
+  if((ev.key === 'Enter' || ev.key === ' ') && ev.target.matches('[role="button"]')){ ev.preventDefault(); ev.target.click(); }
+  if(ev.key === 'Escape'){ if(sheet.classList.contains('open')) closeLayer(sheet); else if(detail.classList.contains('open')) closeDetail(); else if(roul.classList.contains('open')) closeLayer(roul); }
+});
+
+/* Fit the framed phone to short desktop windows */
+const device = $('#device');
+function fit(){ device.style.zoom = innerWidth > 860 ? Math.min(1, (innerHeight - 40) / 864) : ''; }
+addEventListener('resize', fit); fit();
+
+render();
+const startId = decodeURIComponent(location.hash.slice(1));
+if(BY[startId]) openDetail(startId);
+</script>
+</body>
+</html>
